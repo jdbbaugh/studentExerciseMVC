@@ -30,7 +30,7 @@ namespace StudentExerciseMVP.Models
         public string SlackHandle { get; set; }
         [Required]
         [Display(Name = "Cohort")]
-        private int CohortId { get; set; }
+        public int CohortId { get; set; }
         public Cohort Cohort { get; set; }
     }
 
