@@ -123,19 +123,44 @@ namespace StudentExerciseMVP.Controllers
         // GET: Exercises/Edit/5
         public ActionResult Edit(int id)
         {
-            return View();
+            Exercise exercise = GetExerciseById(id);
+            if (exercise == null)
+            {
+                return NotFound();
+            }
+
+            ExerciseEditViewModel viewModel = new ExerciseEditViewModel
+            {
+                Exercise = exercise
+            };
+
+            return View(viewModel);
         }
 
         // POST: Exercises/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        public ActionResult Edit(int id, ExerciseEditViewModel viewModel)
         {
             try
             {
-                // TODO: Add update logic here
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"UPDATE Exercise
+                                            SET exerciseName = @exerciseName,
+                                                exerciseLanguage = @exerciseLanguage
+                                            WHERE id = @id";
+                        cmd.Parameters.Add(new SqlParameter("@exerciseName", viewModel.Exercise.ExerciseName));
+                        cmd.Parameters.Add(new SqlParameter("@exerciseLanguage", viewModel.Exercise.ExerciseLanguage));
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
 
-                return RedirectToAction(nameof(Index));
+                        cmd.ExecuteNonQuery();
+                        return RedirectToAction(nameof(Index));
+                    }
+                }
             }
             catch
             {
