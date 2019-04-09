@@ -59,7 +59,27 @@ namespace StudentExerciseMVP.Controllers
         // GET: Cohorts/Details/5
         public ActionResult Details(int id)
         {
-            return View();
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = $@"SELECT id, cohortName FROM Cohort WHERE id = {id}";
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    Cohort cohort = null;
+                    if (reader.Read())
+                    {
+                        cohort = new Cohort
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("id")),
+                            Name = reader.GetString(reader.GetOrdinal("cohortName"))
+                        };
+                    }
+                    reader.Close();
+                    return View(cohort);
+                }
+            }
         }
 
         // GET: Cohorts/Create

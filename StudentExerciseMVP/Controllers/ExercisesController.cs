@@ -59,7 +59,28 @@ namespace StudentExerciseMVP.Controllers
         // GET: Exercises/Details/5
         public ActionResult Details(int id)
         {
-            return View();
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = $@"SELECT id, exerciseName, exerciseLanguage FROM Exercise WHERE id ={id}";
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    Exercise exercise = null;
+                    if (reader.Read())
+                    {
+                        exercise = new Exercise
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("id")),
+                            ExerciseName = reader.GetString(reader.GetOrdinal("exerciseName")),
+                            ExerciseLanguage = reader.GetString(reader.GetOrdinal("exerciseLanguage"))
+                        };
+                    }
+                    reader.Close();
+                    return View(exercise);
+                }
+            }
         }
 
         // GET: Exercises/Create

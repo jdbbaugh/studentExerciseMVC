@@ -71,7 +71,40 @@ namespace StudentExerciseMVP.Controllers
         // GET: Students/Details/5
         public ActionResult Details(int id)
         {
-            return View();
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = $@"SELECT s.Id AS StudentId,
+                                               s.FirstName, s.LastName,
+                                               s.SlackHandle, s.CohortId,
+                                               c.cohortName
+                                        FROM Student s LEFT JOIN Cohort c on s.cohortId = c.id
+                                        WHERE s.Id = {id}";
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    Student student = null;
+                    if (reader.Read())
+                    {
+                        student = new Student
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("StudentId")),
+                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
+                            CohortId = reader.GetInt32(reader.GetOrdinal("CohortId")),
+                            Cohort = new Cohort
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("CohortId")),
+                                Name = reader.GetString(reader.GetOrdinal("cohortName"))
+                            }
+                        };
+                    }
+                    reader.Close();
+                    return View(student);
+                }
+            }
         }
 
         // GET: Students/Create
