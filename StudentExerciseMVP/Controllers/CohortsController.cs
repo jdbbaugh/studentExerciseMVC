@@ -121,19 +121,43 @@ namespace StudentExerciseMVP.Controllers
         // GET: Cohorts/Edit/5
         public ActionResult Edit(int id)
         {
-            return View();
+            Cohort cohort = GetCohortById(id);
+            if (cohort == null)
+            {
+                return NotFound();
+            }
+
+            CohortEditViewModel viewModel = new CohortEditViewModel
+            {
+                Cohort = cohort
+            };
+
+            return View(viewModel);
         }
 
         // POST: Cohorts/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        public ActionResult Edit(int id, CohortEditViewModel viewModel)
         {
             try
             {
-                // TODO: Add update logic here
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"UPDATE Cohort
+                                            SET cohortName = @CohortName
+                                            WHERE id = @id";
+                        cmd.Parameters.Add(new SqlParameter("@CohortName", viewModel.Cohort.Name));
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
 
-                return RedirectToAction(nameof(Index));
+                        cmd.ExecuteNonQuery();
+
+                        return RedirectToAction(nameof(Index));
+                    }
+                }
             }
             catch
             {
