@@ -144,17 +144,38 @@ namespace StudentExerciseMVP.Controllers
         // GET: Cohorts/Delete/5
         public ActionResult Delete(int id)
         {
-            return View();
+            Cohort cohort = GetCohortById(id);
+            if (cohort == null)
+            {
+                return NotFound();
+            }
+
+            CohortDeleteViewModel viewModel = new CohortDeleteViewModel
+            {
+                Cohort = cohort
+            };
+
+            return View(viewModel);
         }
 
         // POST: Cohorts/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        public ActionResult Delete(int id, CohortDeleteViewModel viewModel)
         {
             try
             {
-                // TODO: Add delete logic here
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"DELETE FROM Cohort WHERE id = @id";
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
 
                 return RedirectToAction(nameof(Index));
             }
@@ -163,5 +184,33 @@ namespace StudentExerciseMVP.Controllers
                 return View();
             }
         }
+
+        private Cohort GetCohortById(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT id, cohortName FROM Cohort WHERE id = @id";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    Cohort cohort = null;
+
+                    if (reader.Read())
+                    {
+                        cohort = new Cohort
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("id")),
+                            Name = reader.GetString(reader.GetOrdinal("cohortName"))
+                        };
+                    }
+                    reader.Close();
+                    return cohort;
+                }
+            }
+        }
+
     }
 }
