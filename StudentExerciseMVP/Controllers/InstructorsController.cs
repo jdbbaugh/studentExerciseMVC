@@ -72,7 +72,40 @@ namespace StudentExerciseMVP.Controllers
         // GET: Instructors/Details/5
         public ActionResult Details(int id)
         {
-            return View();
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = $@"SELECT i.Id AS InstructorId,
+                                               i.FirstName, i.LastName,
+                                               i.SlackHandle, i.CohortId,
+                                               c.CohortName 
+                                        FROM Instructor i LEFT JOIN Cohort c on i.cohortId = c.id
+                                        WHERE i.id = {id}";
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    Instructor instructor = null;
+                    if (reader.Read())
+                    {
+                        instructor = new Instructor
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("InstructorId")),
+                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
+                            CohortId = reader.GetInt32(reader.GetOrdinal("CohortId")),
+                            Cohort = new Cohort
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("CohortId")),
+                                Name = reader.GetString(reader.GetOrdinal("CohortName")),
+                            }
+                        };
+                    }
+                    reader.Close();
+                    return View(instructor);
+                }
+            }
         }
 
         // GET: Instructors/Create
@@ -170,17 +203,38 @@ namespace StudentExerciseMVP.Controllers
         // GET: Instructors/Delete/5
         public ActionResult Delete(int id)
         {
-            return View();
+            Instructor instructor = GetInstructorById(id);
+            if (instructor == null)
+            {
+                return NotFound();
+            }
+
+            InstructorDeleteViewModel viewModel = new InstructorDeleteViewModel
+            {
+                Instructor = instructor
+            };
+
+            return View(viewModel);
         }
 
         // POST: Instructors/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        public ActionResult Delete(int id, InstructorDeleteViewModel viewModel)
         {
             try
             {
-                // TODO: Add delete logic here
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"DELETE FROM Instructor WHERE id = @id";
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
 
                 return RedirectToAction(nameof(Index));
             }

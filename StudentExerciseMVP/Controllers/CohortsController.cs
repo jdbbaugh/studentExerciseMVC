@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using StudentExerciseMVP.Models;
+using StudentExerciseMVP.Models.ViewModels;
 
 namespace StudentExerciseMVP.Controllers
 {
@@ -59,25 +60,57 @@ namespace StudentExerciseMVP.Controllers
         // GET: Cohorts/Details/5
         public ActionResult Details(int id)
         {
-            return View();
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = $@"SELECT id, cohortName FROM Cohort WHERE id = {id}";
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    Cohort cohort = null;
+                    if (reader.Read())
+                    {
+                        cohort = new Cohort
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("id")),
+                            Name = reader.GetString(reader.GetOrdinal("cohortName"))
+                        };
+                    }
+                    reader.Close();
+                    return View(cohort);
+                }
+            }
         }
 
         // GET: Cohorts/Create
         public ActionResult Create()
         {
-            return View();
+            CohortCreateViewModel viewModel = new CohortCreateViewModel();
+            return View(viewModel);
         }
 
         // POST: Cohorts/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public ActionResult Create(CohortCreateViewModel viewModel)
         {
             try
             {
-                // TODO: Add insert logic here
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"INSERT INTO Cohort (CohortName)
+                                            VALUES (@cohortName)";
+                        cmd.Parameters.Add(new SqlParameter("@cohortName", viewModel.Cohort.Name));
 
-                return RedirectToAction(nameof(Index));
+                        cmd.ExecuteNonQuery();
+
+                        return RedirectToAction(nameof(Index));
+                    }
+                }
             }
             catch
             {
