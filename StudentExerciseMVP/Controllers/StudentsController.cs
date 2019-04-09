@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using StudentExerciseMVP.Models;
 
 namespace StudentExerciseMVP.Controllers
 {
@@ -29,7 +30,42 @@ namespace StudentExerciseMVP.Controllers
         // GET: Students
         public ActionResult Index()
         {
-            return View();
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT s.Id AS StudentId,
+                                               s.FirstName, s.LastName,
+                                               s.SlackHandle, s.CohortId,
+                                               c.cohortName
+                                        FROM Student s LEFT JOIN Cohort c on s.cohortId = c.id";
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    List<Student> students = new List<Student>();
+
+                    while (reader.Read())
+                    {
+                        Student student = new Student
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("StudentId")),
+                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
+                            CohortId = reader.GetInt32(reader.GetOrdinal("CohortId")),
+                            Cohort = new Cohort
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("CohortId")),
+                                Name = reader.GetString(reader.GetOrdinal("cohortName"))
+                            }
+                        };
+                        students.Add(student);
+                    }
+
+                    reader.Close();
+                    return View(students);
+                }
+            }
         }
 
         // GET: Students/Details/5
