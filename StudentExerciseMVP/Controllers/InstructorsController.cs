@@ -203,7 +203,18 @@ namespace StudentExerciseMVP.Controllers
         // GET: Instructors/Delete/5
         public ActionResult Delete(int id)
         {
-            return View();
+            Instructor instructor = GetInstructorById(id);
+            if (instructor == null)
+            {
+                return NotFound();
+            }
+
+            InstructorDeleteViewModel viewModel = new InstructorDeleteViewModel
+            {
+                Instructor = instructor
+            };
+
+            return View(viewModel);
         }
 
         // POST: Instructors/Delete/5
@@ -213,7 +224,17 @@ namespace StudentExerciseMVP.Controllers
         {
             try
             {
-                // TODO: Add delete logic here
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"DELETE FROM Instructor WHERE id = @id";
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
 
                 return RedirectToAction(nameof(Index));
             }
