@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using StudentExerciseMVP.Models;
+using StudentExerciseMVP.Models.ViewModels;
 
 namespace StudentExerciseMVP.Controllers
 {
@@ -85,19 +86,31 @@ namespace StudentExerciseMVP.Controllers
         // GET: Cohorts/Create
         public ActionResult Create()
         {
-            return View();
+            CohortCreateViewModel viewModel = new CohortCreateViewModel();
+            return View(viewModel);
         }
 
         // POST: Cohorts/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public ActionResult Create(CohortCreateViewModel viewModel)
         {
             try
             {
-                // TODO: Add insert logic here
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"INSERT INTO Cohort (CohortName)
+                                            VALUES (@cohortName)";
+                        cmd.Parameters.Add(new SqlParameter("@cohortName", viewModel.Cohort.Name));
 
-                return RedirectToAction(nameof(Index));
+                        cmd.ExecuteNonQuery();
+
+                        return RedirectToAction(nameof(Index));
+                    }
+                }
             }
             catch
             {
